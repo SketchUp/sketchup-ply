@@ -2,7 +2,7 @@
 
 require 'sketchup'
 
-module JF
+module CommunityExtensions
 module PLY
 
     class PLYFile
@@ -224,10 +224,10 @@ module PLY
     end
 
 end # module PLYFile
-end # module JF
+end # module CommunityExtensions
 
 unless file_loaded?(__FILE__)
     menu = UI.menu("Plugins")
-    menu.add_item("[jf] Import .ply file") { JF::PLY.ply_import }
+    menu.add_item("[jf] Import .ply file") { CommunityExtensions::PLY.ply_import }
 end
 file_loaded(__FILE__)
