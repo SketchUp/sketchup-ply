@@ -16,7 +16,6 @@ module CommunityExtensions
         @comments  = []
         @lines     = []
         @scale     = 1.0
-        #@tr       = Geom::Transformation.rotation(ORIGIN, X_AXIS, 90.degrees)
       end
 
       def ascii?
@@ -84,7 +83,6 @@ module CommunityExtensions
             elems[y_i].to_f*@scale,
             elems[z_i].to_f*@scale
           ]
-          #vert.transform!(@tr)
           verts << vert
         end
         @vertices = verts
@@ -222,13 +220,10 @@ module CommunityExtensions
       end
 
       def load_file(path, status)
-        begin
         return IMPORT_FILE_NOT_FOUND unless File.exists?(path)
-        @tr = Geom::Transformation.rotation(ORIGIN, X_AXIS, 90.degrees)
-        @scale = 1.0
         ply_file = PLYFile.new(path)
         st = ply_file.parse
-        return IMPORT_FAILED unless st
+        return IMPORT_CANCELLED if st == false
         return IMPORT_FAILED unless ply_file.valid?
         entities = Sketchup.active_model.entities
         if entities.length > 0
@@ -240,12 +235,12 @@ module CommunityExtensions
         entities.fill_from_mesh(ply_file.mesh, false, 0)
         Sketchup.active_model.commit_operation
         return IMPORT_SUCCESS
-        rescue => e
-          p e.description
-          p e.backtrace
-          return IMPORT_FAILED
-        end
-      end
+      rescue => e
+        puts e.description
+        puts e.backtrace.join("\n")
+        return IMPORT_FAILED
+      end # def load_file
+
     end # class Importer
 
   end # module PLY
