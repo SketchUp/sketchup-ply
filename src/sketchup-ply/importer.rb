@@ -29,6 +29,7 @@ module CommunityExtensions
       def msg(str)
         Sketchup.status_text = str
       end
+
       def parse
         now = Time.now
         msg "Reading File."
@@ -221,6 +222,7 @@ module CommunityExtensions
       end
 
       def load_file(path, status)
+        begin
         return IMPORT_FILE_NOT_FOUND unless File.exists?(path)
         @tr = Geom::Transformation.rotation(ORIGIN, X_AXIS, 90.degrees)
         @scale = 1.0
@@ -238,10 +240,15 @@ module CommunityExtensions
         entities.fill_from_mesh(ply_file.mesh, false, 0)
         Sketchup.active_model.commit_operation
         return IMPORT_SUCCESS
+        rescue => e
+          p e.description
+          p e.backtrace
+          return IMPORT_FAILED
+        end
       end
     end # class Importer
 
-  end # module PLYFile
+  end # module PLY
 end # module CommunityExtensions
 
 unless file_loaded?(__FILE__)
