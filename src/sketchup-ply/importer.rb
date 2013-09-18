@@ -199,6 +199,25 @@ module CommunityExtensions
       end
     end
 
+    class Importer << Sketchup::Importer
+      def description
+        'polygon file format (.ply)'
+      end
+      def file_extension
+        'ply'
+      end
+      def id
+        'com.sketchup.sketchup-ply'
+      end
+      def supports_options?
+      end
+      def do_options
+      end
+      def load_file(path, status)
+        # return status
+      end
+    end
+
     def self.ply_import
       @tr = Geom::Transformation.rotation(ORIGIN, X_AXIS, 90.degrees)
       @scale = 1.0
