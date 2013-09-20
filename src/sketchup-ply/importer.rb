@@ -8,15 +8,14 @@ module CommunityExtensions
     class PLYFile
       attr_reader :header, :elements, :file_type, :vertices, :faces, :mesh
       def initialize(filename)
-        @filename = filename
-        @elements = []
-        @header = []
+        @filename  = filename
+        @elements  = []
+        @header    = []
         @file_type = nil
-        @valid = nil
-        @comments = []
-        @lines = []
-        @scale = 1.0
-        #@tr = Geom::Transformation.rotation(ORIGIN, X_AXIS, 90.degrees)
+        @valid     = nil
+        @comments  = []
+        @lines     = []
+        @scale     = 1.0
       end
 
       def ascii?
@@ -29,6 +28,7 @@ module CommunityExtensions
       def msg(str)
         Sketchup.status_text = str
       end
+
       def parse
         now = Time.now
         msg "Reading File."
@@ -83,7 +83,6 @@ module CommunityExtensions
             elems[y_i].to_f*@scale,
             elems[z_i].to_f*@scale
           ]
-          #vert.transform!(@tr)
           verts << vert
         end
         @vertices = verts
@@ -177,19 +176,17 @@ module CommunityExtensions
             @elements[-1].add_prop(rest)
           end
         end
-        #return( elems )
       end
-
     end # class PLYFile
 
     class Element
       attr_reader :name, :qty, :props, :lines
       def initialize(name, qty)
-        @name = name
-        @qty = qty
+        @name        = name
+        @qty         = qty
         @start_index = 0
-        @props = []
-        @lines = []
+        @props       = []
+        @lines       = []
       end
       def add_prop(prop)
         @props << prop
@@ -199,35 +196,57 @@ module CommunityExtensions
       end
     end
 
-    def self.ply_import
-      @tr = Geom::Transformation.rotation(ORIGIN, X_AXIS, 90.degrees)
-      @scale = 1.0
-      filename  = UI.openpanel "Select .ply file", nil, "*.ply"
-      return unless filename
-      ply_file = PLYFile.new(filename)
-      st = ply_file.parse
-      #p ply_file.valid?
-      return unless st
-      return unless ply_file.valid?
-      #p ply_file
+    class Importer < Sketchup::Importer
 
-      entities = Sketchup.active_model.entities
-      if entities.length > 0
-        grp = entities.add_group
-        entities = grp.entities
+      IMPORT_SUCCESS                        = ImportSuccess
+      IMPORT_FAILED                         = ImportFail
+      IMPORT_CANCELLED                      = ImportCanceled
+      IMPORT_FILE_NOT_FOUND                 = ImportFileNotFound
+      IMPORT_SKETCHUP_VERSION_NOT_SUPPORTED = 5
+
+      def description
+        'polygon file format (.ply)'
       end
-      Sketchup.status_text = "Adding Mesh."
-      Sketchup.active_model.start_operation("Import PLY file", true)
-      entities.fill_from_mesh(ply_file.mesh, false, 0)
-      Sketchup.active_model.commit_operation
+      def file_extension
+        'ply'
+      end
+      def id
+        'com.sketchup.sketchup-ply'
+      end
+      def supports_options?
+        false
+      end
+      def do_options
+      end
 
-    end
+      def load_file(path, status)
+        return IMPORT_FILE_NOT_FOUND unless File.exists?(path)
+        ply_file = PLYFile.new(path)
+        st = ply_file.parse
+        return IMPORT_CANCELLED if st == false
+        return IMPORT_FAILED unless ply_file.valid?
+        entities = Sketchup.active_model.entities
+        if entities.length > 0
+          grp = entities.add_group
+          entities = grp.entities
+        end
+        Sketchup.status_text = "Adding Mesh.."
+        Sketchup.active_model.start_operation("Import PLY file", true)
+        entities.fill_from_mesh(ply_file.mesh, false, 0)
+        Sketchup.active_model.commit_operation
+        return IMPORT_SUCCESS
+      rescue => e
+        puts e.description
+        puts e.backtrace.join("\n")
+        return IMPORT_FAILED
+      end # def load_file
 
-  end # module PLYFile
+    end # class Importer
+
+  end # module PLY
 end # module CommunityExtensions
 
 unless file_loaded?(__FILE__)
-  menu = UI.menu("Plugins")
-  menu.add_item("[jf] Import .ply file") { CommunityExtensions::PLY.ply_import }
+  Sketchup.register_importer(CommunityExtensions::PLY::Importer.new)
+  file_loaded(__FILE__)
 end
-file_loaded(__FILE__)
